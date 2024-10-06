@@ -2,11 +2,15 @@ package com.example.mindful_mentor.service;
 
 import com.example.mindful_mentor.dto.UserSignupRequest;
 import com.example.mindful_mentor.dto.UserLoginRequest;
+import com.example.mindful_mentor.dto.UserLoginResponse;
 import com.example.mindful_mentor.exception.DuplicateEmailException;
 import com.example.mindful_mentor.exception.DuplicateStudentNumberException;
-import com.example.mindful_mentor.exception.UserNotFoundException; // Custom exception for user not found
+import com.example.mindful_mentor.exception.UserNotFoundException; 
 import com.example.mindful_mentor.model.User;
 import com.example.mindful_mentor.repository.UserRepository;
+
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,15 +25,16 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
 
     public void signUp(UserSignupRequest signupRequest) {
-    	if (userRepository.findByEmail(signupRequest.getEmail()) != null) {
+        if (userRepository.findByEmail(signupRequest.getEmail()) != null) {
             throw new DuplicateEmailException("Email is already registered.");
         }
-    	
-    	if (userRepository.findByStudentNumber(signupRequest.getStudentNumber()) != null) {
+
+        if (userRepository.findByStudentNumber(signupRequest.getStudentNumber()) != null) {
             throw new DuplicateStudentNumberException("Student number is already registered.");
         }
 
         User user = new User();
+        user.setId(UUID.randomUUID());
         user.setFirstName(signupRequest.getFirstName());
         user.setMiddleName(signupRequest.getMiddleName());
         user.setLastName(signupRequest.getLastName());
@@ -37,11 +42,12 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
         user.setPhoneNumber(signupRequest.getPhoneNumber());
         user.setStudentNumber(signupRequest.getStudentNumber());
+        user.setRole(signupRequest.getRole());
 
         userRepository.save(user);
     }
-    
-    public User login(UserLoginRequest loginRequest) {
+
+    public UserLoginResponse login(UserLoginRequest loginRequest) {
         // Check if the user exists by email
         User user = userRepository.findByEmail(loginRequest.getEmail());
         if (user == null) {
@@ -54,6 +60,21 @@ public class UserService {
             throw new IllegalArgumentException("Wrong password provided."); // Throw exception for wrong password
         }
         
-        return user; // Return user object if login is successful
+        // Create and return UserResponse with user details
+        return new UserLoginResponse(
+            user.getId().toString(), // Convert UUID to String if needed
+            user.getFirstName(),
+            user.getMiddleName(),
+            user.getLastName(),
+            user.getEmail(),
+            user.getPhoneNumber(),
+            user.getStudentNumber(),
+            user.getRole()
+        );
+    }
+
+    public User getUserById(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found."));
     }
 }

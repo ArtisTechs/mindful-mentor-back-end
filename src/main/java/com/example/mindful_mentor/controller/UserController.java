@@ -1,6 +1,7 @@
 package com.example.mindful_mentor.controller;
 
 import com.example.mindful_mentor.dto.UserLoginRequest;
+import com.example.mindful_mentor.dto.UserLoginResponse;
 import com.example.mindful_mentor.dto.UserSignupRequest;
 import com.example.mindful_mentor.exception.DuplicateEmailException;
 import com.example.mindful_mentor.exception.DuplicateStudentNumberException;
@@ -11,6 +12,9 @@ import com.example.mindful_mentor.exception.UserNotFoundException;
 import com.example.mindful_mentor.model.User;
 import com.example.mindful_mentor.response.SuccessResponse;
 import com.example.mindful_mentor.service.UserService;
+
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,10 +35,10 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginRequest loginRequest) {
-        User user = userService.login(loginRequest);
-        SuccessResponse<String> successResponse = new SuccessResponse<>("Login successful.", "User login");
-        return ResponseEntity.ok(successResponse); // This will return the success response
+    public ResponseEntity<SuccessResponse<UserLoginResponse>> login(@RequestBody UserLoginRequest loginRequest) {
+        UserLoginResponse user = userService.login(loginRequest);
+        SuccessResponse<UserLoginResponse> successResponse = new SuccessResponse<>(user, "User login successful.");
+        return ResponseEntity.ok(successResponse); // Return the user data along with success message
     }
 
     // Exception handler for UserNotFoundException
@@ -61,5 +65,11 @@ public class UserController {
     public ResponseEntity<ErrorResponse> handleDuplicateStudentNumberException(DuplicateStudentNumberException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse(HttpStatus.CONFLICT.value(), ErrorCodes.STUDENT_NUMBER_ALREADY_REGISTERED.getCode(), ErrorMessages.STUDENT_NUMBER_ALREADY_REGISTERED.getMessage()));
+    }
+    
+    @GetMapping("/profile/{id}")
+    public ResponseEntity<?> getUserProfileById(@PathVariable UUID id) {
+        User user = userService.getUserById(id);
+        return ResponseEntity.ok(user); // Return the user details if found
     }
 }

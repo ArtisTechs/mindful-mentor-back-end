@@ -1,5 +1,6 @@
 package com.example.mindful_mentor.model;
 
+import java.util.UUID;
 import jakarta.persistence.*;
 
 @Entity
@@ -7,29 +8,37 @@ import jakarta.persistence.*;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(columnDefinition = "UUID", updatable = false, nullable = false)
+    private UUID id;
 
     private String firstName;
     private String middleName;
     private String lastName;
-    
+
     @Column(unique = true)
     private String email;
-    
+
     private String password; // Store hashed passwords
 
     private String phoneNumber;
-    
+
     @Column(unique = true)
     private String studentNumber;
 
-    // Getters and Setters
-    public Long getId() {
+    @Enumerated(EnumType.STRING) // Store as String in the database
+    private Role role; // Assuming you create an enum for roles
+
+    // Constructors, Getters, and Setters
+    public User() {
+        this.id = UUID.randomUUID(); // Set the UUID during object creation
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
@@ -87,5 +96,13 @@ public class User {
 
     public void setStudentNumber(String studentNumber) {
         this.studentNumber = studentNumber;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

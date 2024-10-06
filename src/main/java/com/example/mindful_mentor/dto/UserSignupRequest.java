@@ -1,5 +1,7 @@
 package com.example.mindful_mentor.dto;
 
+import com.example.mindful_mentor.model.Role;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -24,6 +26,9 @@ public class UserSignupRequest {
 
     @NotBlank
     private String studentNumber;
+
+    @NotBlank // Ensure that the role is provided
+    private Role role; // Add the role field
 
     // Getters and Setters
     public String getFirstName() {
@@ -80,5 +85,13 @@ public class UserSignupRequest {
 
     public void setStudentNumber(String studentNumber) {
         this.studentNumber = studentNumber;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(@NotBlank Role role) {
+        this.role = role;
     }
 }

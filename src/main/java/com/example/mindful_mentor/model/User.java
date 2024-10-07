@@ -28,6 +28,9 @@ public class User {
 
     @Enumerated(EnumType.STRING) // Store as String in the database
     private Role role; // Assuming you create an enum for roles
+    
+    @Enumerated(EnumType.STRING)
+    private AccountStatus status;
 
     // Constructors, Getters, and Setters
     public User() {
@@ -73,7 +76,7 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
-
+    
     public String getPassword() {
         return password;
     }
@@ -104,5 +107,13 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+    
+    public AccountStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AccountStatus status) {
+        this.status = status;
     }
 }

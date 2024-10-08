@@ -31,8 +31,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/users/signup", "/api/users/login").permitAll()
-                .requestMatchers("/api/users/profile/**").hasRole("COUNSELOR") // Restrict access to counselor only
+                .requestMatchers("/api/users/signup", "/api/users/login").permitAll() 
+                .requestMatchers("/api/users/status").hasRole("COUNSELOR") // Restrict access to counselor only
+                .requestMatchers("/api/users/delete/**").hasRole("COUNSELOR")
+                .requestMatchers("/api/users/list").hasRole("COUNSELOR")
                 .anyRequest().authenticated()
             )
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);

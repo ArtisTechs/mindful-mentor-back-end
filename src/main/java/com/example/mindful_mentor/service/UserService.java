@@ -3,19 +3,28 @@ package com.example.mindful_mentor.service;
 import com.example.mindful_mentor.dto.UserSignupRequest;
 import com.example.mindful_mentor.dto.UserLoginRequest;
 import com.example.mindful_mentor.dto.UserLoginResponse;
+import com.example.mindful_mentor.dto.UserProfileUpdateRequest;
 import com.example.mindful_mentor.exception.DuplicateEmailException;
 import com.example.mindful_mentor.exception.DuplicateStudentNumberException;
 import com.example.mindful_mentor.exception.UserNotFoundException;
 import com.example.mindful_mentor.model.AccountStatus;
+import com.example.mindful_mentor.model.Role;
 import com.example.mindful_mentor.model.User;
 import com.example.mindful_mentor.repository.UserRepository;
 import com.example.mindful_mentor.security.JwtUtil; // Import for JWT token generation
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -97,5 +106,66 @@ public class UserService {
         // Set the password to null before returning the user
         user.setPassword(null);
         return user;
+    }
+    
+    public void updateUserStatus(UUID userId, String status) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+        
+        // Assuming AccountStatus is an enum
+        user.setStatus(AccountStatus.valueOf(status.toUpperCase()));  // Converts string to enum
+        userRepository.save(user);
+    }
+    
+    public void deleteUser(UUID userId) {
+        // Check if the user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
+        
+        // Delete the user
+        userRepository.delete(user);
+    }
+    
+    public Page<User> getAllUsers(String status, String role, int page, int size, String sortBy, String sortDirection) {
+        Pageable pageable = PageRequest.of(page, size, Sort.Direction.fromString(sortDirection), sortBy);
+        Page<User> usersPage;
+        
+        // Logic for filtering users by status and role
+        if (status != null && !status.isEmpty() && role != null && !role.isEmpty()) {
+            // If both status and role filters are provided
+            usersPage = userRepository.findByStatusAndRole(AccountStatus.valueOf(status.toUpperCase()), Role.valueOf(role.toUpperCase()), pageable);
+        } else if (status != null && !status.isEmpty()) {
+            // If only status filter is provided
+            usersPage = userRepository.findByStatus(AccountStatus.valueOf(status.toUpperCase()), pageable);
+        } else if (role != null && !role.isEmpty()) {
+            // If only role filter is provided
+            usersPage = userRepository.findByRole(Role.valueOf(role.toUpperCase()), pageable);
+        } else {
+            // If no filters are provided, fetch all users
+            usersPage = userRepository.findAll(pageable);
+        }
+
+        // Nullify the password for all users in the result set
+        List<User> usersWithoutPassword = usersPage.getContent().stream()
+                .peek(user -> user.setPassword(null)) // Set password to null
+                .collect(Collectors.toList());
+
+        // Return a new Page object with users who have password set to null
+        return new PageImpl<>(usersWithoutPassword, pageable, usersPage.getTotalElements());
+    }
+    
+    public void updateUserProfile(UUID userId, UserProfileUpdateRequest updateRequest) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        // Update fields except role and status
+        user.setFirstName(updateRequest.getFirstName());
+        user.setMiddleName(updateRequest.getMiddleName());
+        user.setLastName(updateRequest.getLastName());
+        user.setEmail(updateRequest.getEmail());
+        user.setPhoneNumber(updateRequest.getPhoneNumber());
+        user.setStudentNumber(updateRequest.getStudentNumber());
+
+        userRepository.save(user); // Save updated user
     }
 }

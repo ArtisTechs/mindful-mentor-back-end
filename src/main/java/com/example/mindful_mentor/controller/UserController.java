@@ -2,6 +2,7 @@ package com.example.mindful_mentor.controller;
 
 import com.example.mindful_mentor.dto.UserLoginRequest;
 import com.example.mindful_mentor.dto.UserLoginResponse;
+import com.example.mindful_mentor.dto.UserProfileUpdateRequest;
 import com.example.mindful_mentor.dto.UserSignupRequest;
 import com.example.mindful_mentor.exception.DuplicateEmailException;
 import com.example.mindful_mentor.exception.DuplicateStudentNumberException;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -67,6 +69,43 @@ public class UserController {
     public ResponseEntity<User> getUserProfileById(@PathVariable UUID id) {
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user); // Return the user details without the password
+    }
+    
+    @GetMapping("/list")
+    public ResponseEntity<Page<User>> getAllUsers(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "lastName") String sortBy,
+            @RequestParam(defaultValue = "ASC") String sortDirection) {
+        Page<User> usersPage = userService.getAllUsers(status, role, page, size, sortBy, sortDirection);
+        return ResponseEntity.ok(usersPage);
+    }
+    
+    @PutMapping("/profile/{id}")
+    public ResponseEntity<SuccessResponse<String>> updateUserProfile(
+            @PathVariable UUID id,
+            @RequestBody UserProfileUpdateRequest updateRequest) {
+        userService.updateUserProfile(id, updateRequest);
+        SuccessResponse<String> successResponse = new SuccessResponse<>("User profile updated successfully.", "Profile update");
+        return ResponseEntity.ok(successResponse);
+    }
+    
+    @PostMapping("/status")
+    public ResponseEntity<SuccessResponse<String>> changeUserStatus(@RequestParam UUID id, @RequestParam String status) {
+        // Use the service to change the user status
+        userService.updateUserStatus(id, status);
+        SuccessResponse<String> successResponse = new SuccessResponse<>("User status updated successfully.", "Status update");
+        return ResponseEntity.ok(successResponse);
+    }
+    
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<SuccessResponse<String>> deleteUser(@PathVariable UUID id) {
+        // Use the service to delete the user
+        userService.deleteUser(id);
+        SuccessResponse<String> successResponse = new SuccessResponse<>("User deleted successfully.", "User deletion");
+        return ResponseEntity.ok(successResponse);
     }
 
     // Exception handlers for various error types

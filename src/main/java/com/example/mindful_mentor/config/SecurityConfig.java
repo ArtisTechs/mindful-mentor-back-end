@@ -35,6 +35,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/status").hasRole("COUNSELOR") // Restrict access to counselor only
                 .requestMatchers("/api/users/delete/**").hasRole("COUNSELOR")
                 .requestMatchers("/api/users/list").hasRole("COUNSELOR")
+                .requestMatchers("/api/moods/students-with-mood-today").hasRole("COUNSELOR")
                 .anyRequest().authenticated()
             )
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);

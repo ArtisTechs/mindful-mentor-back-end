@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/users/delete/**").hasRole("COUNSELOR")
                 .requestMatchers("/api/users/list").hasRole("COUNSELOR")
                 .requestMatchers("/api/moods/students-with-mood-today").hasRole("COUNSELOR")
+                .requestMatchers("/api/appointments/status/**").hasRole("COUNSELOR")
                 .anyRequest().authenticated()
             )
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);

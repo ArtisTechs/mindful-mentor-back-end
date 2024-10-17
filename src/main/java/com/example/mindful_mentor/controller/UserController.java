@@ -12,8 +12,12 @@ import com.example.mindful_mentor.exception.ErrorResponse;
 import com.example.mindful_mentor.exception.UserNotFoundException;
 import com.example.mindful_mentor.model.AccountStatus;
 import com.example.mindful_mentor.model.User;
+import com.example.mindful_mentor.repository.UserRepository;
 import com.example.mindful_mentor.response.SuccessResponse;
+import com.example.mindful_mentor.service.FileService;
+import com.example.mindful_mentor.service.GitHubService;
 import com.example.mindful_mentor.service.UserService;
+import com.example.mindful_mentor.websocket.WebSocketEventListener;
 import com.example.mindful_mentor.security.JwtUtil; // Import JWT utility
 
 import java.util.UUID;
@@ -25,6 +29,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -34,9 +39,18 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private GitHubService gitHubService;
 
     @Autowired
     private JwtUtil jwtUtil; // Autowire the JWT utility
+    
+    @Autowired
+    private WebSocketEventListener webSocketEventListener; 
 
     @PostMapping("/signup")
     public ResponseEntity<SuccessResponse<String>> signUp(@RequestBody UserSignupRequest signupRequest) {
@@ -75,23 +89,71 @@ public class UserController {
     public ResponseEntity<Page<User>> getAllUsers(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String role,
+            @RequestParam(required = false) String searchName, 
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "lastName") String sortBy,
             @RequestParam(defaultValue = "ASC") String sortDirection) {
-        Page<User> usersPage = userService.getAllUsers(status, role, page, size, sortBy, sortDirection);
+        
+        Page<User> usersPage = userService.getAllUsers(status, role, searchName, page, size, sortBy, sortDirection);
         return ResponseEntity.ok(usersPage);
     }
+
     
     @PutMapping("/profile/{id}")
-    public ResponseEntity<SuccessResponse<String>> updateUserProfile(
+    public ResponseEntity<String> updateUserProfile(
             @PathVariable UUID id,
-            @RequestBody UserProfileUpdateRequest updateRequest) {
-        userService.updateUserProfile(id, updateRequest);
-        SuccessResponse<String> successResponse = new SuccessResponse<>("User profile updated successfully.", "Profile update");
-        return ResponseEntity.ok(successResponse);
+            @RequestParam("firstName") String firstName,
+            @RequestParam("middleName") String middleName,
+            @RequestParam("lastName") String lastName,
+            @RequestParam("email") String email,
+            @RequestParam(value = "password", required = false) String password,
+            @RequestParam("phoneNumber") String phoneNumber,
+            @RequestParam("studentNumber") String studentNumber,
+            @RequestPart(value = "file", required = false) MultipartFile file) { // Handle file upload
+
+        // Map the individual parameters to the updateRequest object
+        UserProfileUpdateRequest updateRequest = new UserProfileUpdateRequest();
+        updateRequest.setFirstName(firstName);
+        updateRequest.setMiddleName(middleName);
+        updateRequest.setLastName(lastName);
+        updateRequest.setEmail(email);
+        updateRequest.setPassword(password);
+        updateRequest.setPhoneNumber(phoneNumber);
+        updateRequest.setStudentNumber(studentNumber);
+
+        // Handle file upload if present
+        if (file != null && !file.isEmpty()) {
+            try {
+                // Upload image to GitHub and get the URL
+                String imageName = file.getOriginalFilename(); // Use the original file name
+                String imageUrl = gitHubService.uploadImage(file, imageName);
+
+                // Instead of setting the image URL, we set the MultipartFile itself or the image URL
+                updateRequest.setProfilePicture(file);  // Store the MultipartFile or you can keep the URL if necessary
+
+            } catch (Exception e) {
+                // Return an error response if the image upload fails
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Image upload failed: " + e.getMessage());
+            }
+        }
+
+        // Call the user service to update the user profile with the updateRequest
+        try {
+            userService.updateUserProfile(id, updateRequest); // Pass the updated request with profile picture file
+        } catch (Exception e) {
+            // Handle user update failure
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("User profile update failed: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok("User profile updated successfully.");
     }
-    
+
+
+
+
     @PostMapping("/status")
     public ResponseEntity<SuccessResponse<String>> changeUserStatus(@RequestParam UUID id, @RequestParam String status) {
         // Use the service to change the user status
@@ -107,6 +169,7 @@ public class UserController {
         SuccessResponse<String> successResponse = new SuccessResponse<>("User deleted successfully.", "User deletion");
         return ResponseEntity.ok(successResponse);
     }
+
 
     // Exception handlers for various error types
     @ExceptionHandler(UserNotFoundException.class)

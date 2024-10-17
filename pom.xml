@@ -39,6 +39,25 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <dependency>
+        	<groupId>org.springframework.boot</groupId>
+        	<artifactId>spring-boot-starter-amqp</artifactId>
+    	</dependency>
+    	<dependency>
+        	<groupId>org.springframework.integration</groupId>
+        	<artifactId>spring-integration-websocket</artifactId>
+    	</dependency>
+    	<dependency>
+    		<groupId>io.projectreactor.netty</groupId>
+    		<artifactId>reactor-netty</artifactId>
+		</dependency>
+		
+		<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-activemq</artifactId>
+		</dependency>
+
+
 
         <!-- MySQL Connector -->
         <dependency>
@@ -109,6 +128,7 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+
     </dependencies>
 
     <build>

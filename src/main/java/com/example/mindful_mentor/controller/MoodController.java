@@ -45,4 +45,12 @@ public class MoodController {
     ) {
         return moodService.getStudentsWithMoodToday(sortBy, sortAscending, page, size);
     }
+    
+ // Update mood by ID
+    @PutMapping("/update/{id}")
+    public Mood updateMoodById(
+        @PathVariable UUID id, 
+        @RequestBody MoodDTO moodDTO) throws Exception {
+        return moodService.updateMoodById(id, moodDTO);
+    }
 }

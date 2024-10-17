@@ -39,6 +39,7 @@ public class AppointmentService {
         appointment.setUser(user);
         appointment.setScheduledDate(appointmentDTO.getScheduledDate());
         appointment.setStatus(AppointmentStatus.REQUESTED);
+        appointment.setReason(appointmentDTO.getReason());
 
         return appointmentRepository.save(appointment);
     }

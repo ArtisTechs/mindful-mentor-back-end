@@ -1,30 +1,53 @@
 package com.example.mindful_mentor.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
 @Table(name = "messages")
 public class Message {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @NotNull
     @Column(name = "sender_id", nullable = false)
     private UUID senderId;
 
+    @NotNull
     @Column(name = "receiver_id", nullable = false)
     private UUID receiverId;
 
-    @Column(nullable = false)
+    @NotEmpty
+    @Column(nullable = false, length = 255)  // Add length constraint here
     private String content;
 
+    @NotNull
     @Column(name = "timestamp", nullable = false)
     private LocalDateTime timestamp;
+    
+    @NotNull
+    @Column(name = "chat_token", nullable = false)
+    private UUID chatToken;
 
     public Message() {
-        this.id = UUID.randomUUID(); // Auto-generate ID
-        this.timestamp = LocalDateTime.now(); // Set timestamp
+        // Default constructor - initialize timestamp only if needed
+        if (this.timestamp == null) {
+            this.timestamp = LocalDateTime.now();
+        }
+    }
+
+    // Optional: Constructor for easier instantiation
+    public Message(UUID senderId, UUID receiverId, String content) {
+        this.senderId = senderId;
+        this.receiverId = receiverId;
+        this.content = content;
+        this.timestamp = LocalDateTime.now();
     }
 
     // Getters and Setters
@@ -66,5 +89,13 @@ public class Message {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+    
+    public UUID getChatToken() {
+        return chatToken;
+    }
+
+    public void setChatToken(UUID chatToken) {
+        this.chatToken = chatToken;
     }
 }

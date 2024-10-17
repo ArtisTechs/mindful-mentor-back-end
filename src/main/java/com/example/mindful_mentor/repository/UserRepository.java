@@ -16,4 +16,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByStatus(AccountStatus status, Pageable pageable);
     Page<User> findByRole(Role role, Pageable pageable);
     Page<User> findByStatusAndRole(AccountStatus status, Role role, Pageable pageable);
+    User findUserById(UUID id);
+    Page<User> findByFirstNameContainingIgnoreCaseOrMiddleNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+            String firstName, String middleName, String lastName, Pageable pageable);
 }

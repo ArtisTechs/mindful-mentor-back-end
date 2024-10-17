@@ -2,8 +2,9 @@ package com.example.mindful_mentor.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.multipart.MultipartFile;
 
-public class UserProfileUpdateRequest  {
+public class UserProfileUpdateRequest {
 
     @NotBlank
     private String firstName;
@@ -17,13 +18,16 @@ public class UserProfileUpdateRequest  {
     @NotBlank
     private String email;
 
-    @NotBlank
+    // Make password optional for profile updates
     private String password;
 
     private String phoneNumber;
 
     @NotBlank
     private String studentNumber;
+
+    // Use MultipartFile for profile picture handling
+    private MultipartFile profilePicture;
 
     // Getters and Setters
     public String getFirstName() {
@@ -80,5 +84,13 @@ public class UserProfileUpdateRequest  {
 
     public void setStudentNumber(String studentNumber) {
         this.studentNumber = studentNumber;
+    }
+
+    public MultipartFile getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(MultipartFile profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

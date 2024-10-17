@@ -26,6 +26,9 @@ public class Appointment {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AppointmentStatus status;
+    
+    @Column(length = 255)
+    private String reason;
 
     // Getters and setters
     public UUID getId() {
@@ -66,5 +69,13 @@ public class Appointment {
 
     public void setStatus(AppointmentStatus status) {
         this.status = status;
+    }
+    
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

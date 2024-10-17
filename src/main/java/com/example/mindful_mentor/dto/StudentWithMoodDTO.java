@@ -5,7 +5,7 @@ import java.util.UUID;
 
 public class StudentWithMoodDTO {
 
-    private UUID studentId;
+    private UUID id;
     private String firstName;
     private String middleName;
     private String lastName;
@@ -17,12 +17,12 @@ public class StudentWithMoodDTO {
     private String moodDescription;
 
     // Getters and Setters
-    public UUID getStudentId() {
-        return studentId;
+    public UUID getId() {
+        return id;
     }
 
-    public void setStudentId(UUID studentId) {
-        this.studentId = studentId;
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getFirstName() {

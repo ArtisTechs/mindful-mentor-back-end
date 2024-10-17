@@ -2,6 +2,9 @@ package com.example.mindful_mentor.config;
 
 import com.example.mindful_mentor.security.JwtAuthenticationFilter;
 import com.example.mindful_mentor.service.UserDetailsServiceImpl;
+
+import java.util.Arrays;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,6 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -29,14 +35,15 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
+        http.cors().and()  // Enable CORS
+            .csrf().disable()
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api/users/signup", "/api/users/login").permitAll() 
-                .requestMatchers("/api/users/status").hasRole("COUNSELOR") // Restrict access to counselor only
+                .requestMatchers("/api/users/status").hasRole("COUNSELOR")
                 .requestMatchers("/api/users/delete/**").hasRole("COUNSELOR")
-                .requestMatchers("/api/users/list").hasRole("COUNSELOR")
                 .requestMatchers("/api/moods/students-with-mood-today").hasRole("COUNSELOR")
                 .requestMatchers("/api/appointments/status/**").hasRole("COUNSELOR")
+                .requestMatchers("/chat/**").permitAll() 
                 .anyRequest().authenticated()
             )
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
@@ -52,7 +59,21 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        // Directly return the AuthenticationManager instance from AuthenticationConfiguration
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "https://*.example.com")); // Use patterns
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowCredentials(true);
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        config.setExposedHeaders(Arrays.asList("Authorization"));
+
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
     }
 }

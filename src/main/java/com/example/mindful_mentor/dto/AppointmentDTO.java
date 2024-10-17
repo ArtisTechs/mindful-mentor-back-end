@@ -6,6 +6,7 @@ import java.util.UUID;
 public class AppointmentDTO {
     private UUID userId;
     private LocalDate scheduledDate;
+    private String reason;
 
     // Getters and Setters
     public UUID getUserId() {
@@ -22,5 +23,13 @@ public class AppointmentDTO {
 
     public void setScheduledDate(LocalDate scheduledDate) {
         this.scheduledDate = scheduledDate;
+    }
+    
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

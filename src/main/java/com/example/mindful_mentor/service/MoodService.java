@@ -42,7 +42,7 @@ public class MoodService {
 
         // Create Mood entity
         Mood mood = new Mood();
-        mood.setUser(user);
+        mood.setUser(user);  // Setting the user without password
         mood.setDate(moodDTO.getDate());
 
         // Set MoodDetail from MoodDTO
@@ -62,7 +62,7 @@ public class MoodService {
         Sort sort = sortAscending ? Sort.by("date").ascending() : Sort.by("date").descending();
         return moodRepository.findMoodsByFilters(userId, moodCode, startDate, endDate, sort);
     }
-    
+
     public List<StudentWithMoodDTO> getStudentsWithMoodToday(String sortBy, boolean sortAscending, int page, int size) {
         Sort sort = sortAscending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -70,36 +70,74 @@ public class MoodService {
         // Fetch active students with the role of 'STUDENT'
         Page<User> studentPage = userRepository.findByStatusAndRole(AccountStatus.ACTIVE, Role.STUDENT, pageable);
         List<User> students = studentPage.getContent();
-        
+
         List<StudentWithMoodDTO> studentWithMoodDTOList = new ArrayList<>();
         LocalDate today = LocalDate.now();
 
         for (User student : students) {
-            StudentWithMoodDTO studentWithMoodDTO = new StudentWithMoodDTO();
-            studentWithMoodDTO.setStudentId(student.getId());
-            studentWithMoodDTO.setFirstName(student.getFirstName());
-            studentWithMoodDTO.setMiddleName(student.getMiddleName());
-            studentWithMoodDTO.setLastName(student.getLastName());
-            studentWithMoodDTO.setEmail(student.getEmail());
-            studentWithMoodDTO.setPhoneNumber(student.getPhoneNumber());
-            studentWithMoodDTO.setStudentNumber(student.getStudentNumber());
-
             // Fetch mood for today (if exists)
             List<Mood> moods = moodRepository.findByUserIdAndDate(student.getId(), today);
             if (!moods.isEmpty()) {
                 Mood mood = moods.get(0); // Use the first mood entry if there are multiple
+
+                StudentWithMoodDTO studentWithMoodDTO = new StudentWithMoodDTO();
+                studentWithMoodDTO.setId(student.getId());
+                studentWithMoodDTO.setFirstName(student.getFirstName());
+                studentWithMoodDTO.setMiddleName(student.getMiddleName());
+                studentWithMoodDTO.setLastName(student.getLastName());
+                studentWithMoodDTO.setEmail(student.getEmail());
+                studentWithMoodDTO.setPhoneNumber(student.getPhoneNumber());
+                studentWithMoodDTO.setStudentNumber(student.getStudentNumber());
+
+                // Set mood data
                 studentWithMoodDTO.setMoodDate(mood.getDate());
                 studentWithMoodDTO.setMoodCode(mood.getMood().getCode());
                 studentWithMoodDTO.setMoodDescription(mood.getMood().getDescription());
-            } else {
-                studentWithMoodDTO.setMoodDate(null);
-                studentWithMoodDTO.setMoodCode(null);
-                studentWithMoodDTO.setMoodDescription(null);
-            }
 
-            studentWithMoodDTOList.add(studentWithMoodDTO);
+                studentWithMoodDTOList.add(studentWithMoodDTO);
+            }
         }
 
         return studentWithMoodDTOList;
     }
+
+
+
+    // Update mood by ID
+    public Mood updateMoodById(UUID id, MoodDTO moodDTO) throws Exception {
+        // Check if the mood exists by ID
+        Optional<Mood> existingMoodOptional = moodRepository.findById(id);
+        if (existingMoodOptional.isEmpty()) {
+            throw new Exception("Mood not found with ID: " + id);
+        }
+
+        // Get the existing mood and update the fields
+        Mood existingMood = existingMoodOptional.get();
+
+        // Check and update userId
+        if (moodDTO.getUserId() != null) {
+            // Verify if user exists
+            User user = userRepository.findById(moodDTO.getUserId())
+                    .orElseThrow(() -> new Exception("User not found"));
+
+            // Don't change the password field
+            existingMood.setUser(user); // Set the updated user (without password change)
+        }
+
+        // Update mood details
+        if (moodDTO.getMood() != null) {
+            MoodDetail updatedMoodDetail = moodDTO.getMood();
+            existingMood.getMood().setCode(updatedMoodDetail.getCode()); // Update code
+            existingMood.getMood().setDescription(updatedMoodDetail.getDescription()); // Update description
+        }
+
+        // Optionally update the date
+        if (moodDTO.getDate() != null) {
+            existingMood.setDate(moodDTO.getDate());
+        }
+
+        // Save the updated mood
+        return moodRepository.save(existingMood);
+    }
+
 }

@@ -13,6 +13,10 @@ import com.example.mindful_mentor.model.User;
 import com.example.mindful_mentor.repository.UserRepository;
 import com.example.mindful_mentor.security.JwtUtil; // Import for JWT token generation
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +31,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
@@ -38,9 +44,14 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private GitHubService gitHubService;
 
     @Autowired
     private JwtUtil jwtUtil; // Autowire the JwtUtil class for token generation
+    
+    private static final String UPLOAD_DIR = "/path/to/uploads/";
 
     public void signUp(UserSignupRequest signupRequest) {
         if (userRepository.findByEmail(signupRequest.getEmail()) != null) {
@@ -105,8 +116,15 @@ public class UserService {
         
         // Set the password to null before returning the user
         user.setPassword(null);
+        
+        if (user.getProfilePicture() != null) {
+            // Ensure the profile picture URL is set properly
+            String profilePictureUrl = user.getProfilePicture();
+            user.setProfilePicture(profilePictureUrl);  // If necessary, you can format the URL here
+        }
         return user;
     }
+
     
     public void updateUserStatus(UUID userId, String status) {
         User user = userRepository.findById(userId)
@@ -126,22 +144,21 @@ public class UserService {
         userRepository.delete(user);
     }
     
-    public Page<User> getAllUsers(String status, String role, int page, int size, String sortBy, String sortDirection) {
+    public Page<User> getAllUsers(String status, String role, String searchName, int page, int size, String sortBy, String sortDirection) {
         Pageable pageable = PageRequest.of(page, size, Sort.Direction.fromString(sortDirection), sortBy);
         Page<User> usersPage;
-        
-        // Logic for filtering users by status and role
-        if (status != null && !status.isEmpty() && role != null && !role.isEmpty()) {
-            // If both status and role filters are provided
+
+        // Apply filters for status, role, and name
+        if (searchName != null && !searchName.isEmpty()) {
+            usersPage = userRepository.findByFirstNameContainingIgnoreCaseOrMiddleNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                searchName, searchName, searchName, pageable);
+        } else if (status != null && !status.isEmpty() && role != null && !role.isEmpty()) {
             usersPage = userRepository.findByStatusAndRole(AccountStatus.valueOf(status.toUpperCase()), Role.valueOf(role.toUpperCase()), pageable);
         } else if (status != null && !status.isEmpty()) {
-            // If only status filter is provided
             usersPage = userRepository.findByStatus(AccountStatus.valueOf(status.toUpperCase()), pageable);
         } else if (role != null && !role.isEmpty()) {
-            // If only role filter is provided
             usersPage = userRepository.findByRole(Role.valueOf(role.toUpperCase()), pageable);
         } else {
-            // If no filters are provided, fetch all users
             usersPage = userRepository.findAll(pageable);
         }
 
@@ -153,12 +170,15 @@ public class UserService {
         // Return a new Page object with users who have password set to null
         return new PageImpl<>(usersWithoutPassword, pageable, usersPage.getTotalElements());
     }
+
     
-    public void updateUserProfile(UUID userId, UserProfileUpdateRequest updateRequest) {
+    
+    public void updateUserProfile(UUID userId, UserProfileUpdateRequest updateRequest) throws Exception {
+        // Fetch the user by ID
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        // Update fields except role and status
+        // Update other user fields
         user.setFirstName(updateRequest.getFirstName());
         user.setMiddleName(updateRequest.getMiddleName());
         user.setLastName(updateRequest.getLastName());
@@ -166,6 +186,38 @@ public class UserService {
         user.setPhoneNumber(updateRequest.getPhoneNumber());
         user.setStudentNumber(updateRequest.getStudentNumber());
 
-        userRepository.save(user); // Save updated user
+        // Handle password update if provided
+        if (updateRequest.getPassword() != null && !updateRequest.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(updateRequest.getPassword()));
+        }
+
+        // Handle profile picture upload (saving the GitHub photo link)
+        MultipartFile profilePicture = updateRequest.getProfilePicture();
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            String fileName = StringUtils.cleanPath(profilePicture.getOriginalFilename());
+
+            // Check the content type of the uploaded file to ensure it's an image
+            String contentType = profilePicture.getContentType();
+            if (contentType != null && !contentType.startsWith("image/")) {
+                throw new RuntimeException("Invalid file type. Only image files are allowed.");
+            }
+
+            try {
+                // Upload the image to GitHub and get the image URL
+                String imageUrl = gitHubService.uploadImage(profilePicture, fileName);
+
+                // Set the profile picture URL (from GitHub) in the user object
+                user.setProfilePicture(imageUrl);  // Save the GitHub image URL to the user entity
+
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to store profile picture", e);
+            }
+        }
+
+        // Save the updated user entity
+        userRepository.save(user);
     }
+
+
+
 }

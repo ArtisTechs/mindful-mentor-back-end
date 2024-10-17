@@ -31,6 +31,8 @@ public class User {
     
     @Enumerated(EnumType.STRING)
     private AccountStatus status;
+    
+    private String profilePicture;
 
     // Constructors, Getters, and Setters
     public User() {
@@ -115,5 +117,13 @@ public class User {
 
     public void setStatus(AccountStatus status) {
         this.status = status;
+    }
+    
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

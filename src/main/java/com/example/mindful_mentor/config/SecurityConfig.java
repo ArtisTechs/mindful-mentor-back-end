@@ -67,12 +67,17 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
 
-        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "https://*.example.com")); // Use patterns
+        // Allow localhost and any subdomain of example.com
+        config.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "https://*.example.com"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowCredentials(true);
         config.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         config.setExposedHeaders(Arrays.asList("Authorization"));
 
+        // Allowing preflight requests
+        config.setMaxAge(3600L); // Optional: Cache the CORS preflight response for 1 hour
+
+        // Register CORS configuration for all endpoints
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }

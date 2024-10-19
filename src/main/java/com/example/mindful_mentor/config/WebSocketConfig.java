@@ -20,6 +20,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Register the WebSocket endpoint that the client will use
-        registry.addEndpoint("/chat").setAllowedOrigins("http://localhost:3000").withSockJS(); // Enable SockJS fallback
+        registry.addEndpoint("/chat")
+                .setAllowedOrigins("http://localhost:3000", "https://artistechs.github.io") // CORS configuration
+                .withSockJS(); // Enable SockJS fallback
     }
 }

@@ -2,6 +2,9 @@ package com.example.mindful_mentor.repository;
 
 import com.example.mindful_mentor.model.Appointment;
 import com.example.mindful_mentor.model.AppointmentStatus;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +27,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
         @Param("status") AppointmentStatus status,
         Pageable pageable
     );
+    
+    @Transactional
+    void deleteByUserId(UUID userId);
 }

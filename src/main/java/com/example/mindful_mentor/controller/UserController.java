@@ -93,9 +93,10 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "lastName") String sortBy,
-            @RequestParam(defaultValue = "ASC") String sortDirection) {
+            @RequestParam(defaultValue = "ASC") String sortDirection,
+            @RequestParam(defaultValue = "false") boolean ignorePagination) {
         
-        Page<User> usersPage = userService.getAllUsers(status, role, searchName, page, size, sortBy, sortDirection);
+        Page<User> usersPage = userService.getAllUsers(status, role, searchName, page, size, sortBy, sortDirection, ignorePagination);
         return ResponseEntity.ok(usersPage);
     }
 
@@ -110,7 +111,7 @@ public class UserController {
             @RequestParam(value = "password", required = false) String password,
             @RequestParam("phoneNumber") String phoneNumber,
             @RequestParam("studentNumber") String studentNumber,
-            @RequestPart(value = "file", required = false) MultipartFile file) { // Handle file upload
+            @RequestParam(value = "profilePicture", required = false) String profilePicture) { // Use String for profilePicture
 
         // Map the individual parameters to the updateRequest object
         UserProfileUpdateRequest updateRequest = new UserProfileUpdateRequest();
@@ -122,26 +123,14 @@ public class UserController {
         updateRequest.setPhoneNumber(phoneNumber);
         updateRequest.setStudentNumber(studentNumber);
 
-        // Handle file upload if present
-        if (file != null && !file.isEmpty()) {
-            try {
-                // Upload image to GitHub and get the URL
-                String imageName = file.getOriginalFilename(); // Use the original file name
-                String imageUrl = gitHubService.uploadImage(file, imageName);
-
-                // Instead of setting the image URL, we set the MultipartFile itself or the image URL
-                updateRequest.setProfilePicture(file);  // Store the MultipartFile or you can keep the URL if necessary
-
-            } catch (Exception e) {
-                // Return an error response if the image upload fails
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Image upload failed: " + e.getMessage());
-            }
+        // If a profile picture URL or path is provided, set it in the update request
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            updateRequest.setProfilePicture(profilePicture);  // Store the profile picture URL/path string
         }
 
         // Call the user service to update the user profile with the updateRequest
         try {
-            userService.updateUserProfile(id, updateRequest); // Pass the updated request with profile picture file
+            userService.updateUserProfile(id, updateRequest); // Pass the updated request with profile picture string
         } catch (Exception e) {
             // Handle user update failure
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -150,6 +139,7 @@ public class UserController {
 
         return ResponseEntity.ok("User profile updated successfully.");
     }
+
 
 
 

@@ -10,6 +10,9 @@ import com.example.mindful_mentor.exception.UserNotFoundException;
 import com.example.mindful_mentor.model.AccountStatus;
 import com.example.mindful_mentor.model.Role;
 import com.example.mindful_mentor.model.User;
+import com.example.mindful_mentor.repository.AppointmentRepository;
+import com.example.mindful_mentor.repository.MessageRepository;
+import com.example.mindful_mentor.repository.MoodRepository;
 import com.example.mindful_mentor.repository.UserRepository;
 import com.example.mindful_mentor.security.JwtUtil; // Import for JWT token generation
 
@@ -41,6 +44,16 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
+    @Autowired
+    private MessageRepository messageRepository;
+
+    @Autowired
+    private MoodRepository moodRepository;
+
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -139,13 +152,29 @@ public class UserService {
         // Check if the user exists
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with id: " + userId));
-        
-        // Delete the user
+
+        // Delete associated records before deleting the user
+        appointmentRepository.deleteByUserId(userId);
+        messageRepository.deleteBySenderId(userId);
+        messageRepository.deleteByReceiverId(userId);
+        moodRepository.deleteByUserId(userId);
+
+        // Finally, delete the user
         userRepository.delete(user);
     }
     
-    public Page<User> getAllUsers(String status, String role, String searchName, int page, int size, String sortBy, String sortDirection) {
-        Pageable pageable = PageRequest.of(page, size, Sort.Direction.fromString(sortDirection), sortBy);
+    public Page<User> getAllUsers(String status, String role, String searchName, int page, Integer size, String sortBy, String sortDirection, boolean ignorePagination) {
+        Pageable pageable;
+
+        // Handle ignoring pagination or null size
+        if (ignorePagination || size == null) {
+            // Create a Pageable with only sorting (no pagination)
+        	 pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        } else {
+            // Regular pagination logic with sorting
+            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        }
+
         Page<User> usersPage;
 
         // Apply filters for status, role, and name
@@ -171,6 +200,8 @@ public class UserService {
         return new PageImpl<>(usersWithoutPassword, pageable, usersPage.getTotalElements());
     }
 
+
+
     
     
     public void updateUserProfile(UUID userId, UserProfileUpdateRequest updateRequest) throws Exception {
@@ -191,33 +222,15 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(updateRequest.getPassword()));
         }
 
-        // Handle profile picture upload (saving the GitHub photo link)
-        MultipartFile profilePicture = updateRequest.getProfilePicture();
+        // Handle profile picture URL update (no file upload)
+        String profilePicture = updateRequest.getProfilePicture();
         if (profilePicture != null && !profilePicture.isEmpty()) {
-            String fileName = StringUtils.cleanPath(profilePicture.getOriginalFilename());
-
-            // Check the content type of the uploaded file to ensure it's an image
-            String contentType = profilePicture.getContentType();
-            if (contentType != null && !contentType.startsWith("image/")) {
-                throw new RuntimeException("Invalid file type. Only image files are allowed.");
-            }
-
-            try {
-                // Upload the image to GitHub and get the image URL
-                String imageUrl = gitHubService.uploadImage(profilePicture, fileName);
-
-                // Set the profile picture URL (from GitHub) in the user object
-                user.setProfilePicture(imageUrl);  // Save the GitHub image URL to the user entity
-
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to store profile picture", e);
-            }
+            // Just set the profile picture URL (no upload to GitHub needed)
+            user.setProfilePicture(profilePicture);  // Save the string URL to the user entity
         }
 
         // Save the updated user entity
         userRepository.save(user);
     }
-
-
 
 }

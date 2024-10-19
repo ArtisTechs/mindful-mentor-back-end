@@ -27,7 +27,7 @@ public class UserProfileUpdateRequest {
     private String studentNumber;
 
     // Use MultipartFile for profile picture handling
-    private MultipartFile profilePicture;
+    private String profilePicture;
 
     // Getters and Setters
     public String getFirstName() {
@@ -86,11 +86,11 @@ public class UserProfileUpdateRequest {
         this.studentNumber = studentNumber;
     }
 
-    public MultipartFile getProfilePicture() {
+    public String getProfilePicture() {
         return profilePicture;
     }
 
-    public void setProfilePicture(MultipartFile profilePicture) {
+    public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
     }
 }

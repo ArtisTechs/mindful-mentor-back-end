@@ -33,10 +33,12 @@ public class AppointmentController {
             @RequestParam(defaultValue = "dateCreated") String sortBy,
             @RequestParam(defaultValue = "true") boolean sortAscending,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "false") boolean ignorePagination // Add the ignorePagination parameter
     ) {
-        return appointmentService.getAppointments(userId, startDate, endDate, status, sortBy, sortAscending, page, size);
+        return appointmentService.getAppointments(userId, startDate, endDate, status, sortBy, sortAscending, page, size, ignorePagination);
     }
+
 
     @PostMapping("/create")
     public Appointment createAppointment(@RequestBody AppointmentDTO appointmentDTO) throws Exception {

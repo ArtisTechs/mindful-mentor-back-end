@@ -63,9 +63,19 @@ public class MoodService {
         return moodRepository.findMoodsByFilters(userId, moodCode, startDate, endDate, sort);
     }
 
-    public List<StudentWithMoodDTO> getStudentsWithMoodToday(String sortBy, boolean sortAscending, int page, int size) {
+    public List<StudentWithMoodDTO> getStudentsWithMoodToday(String sortBy, boolean sortAscending, int page, int size, boolean ignorePagination) {
+        // Define the sort order based on sortAscending
         Sort sort = sortAscending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Handle ignoring pagination or null size
+        Pageable pageable;
+        if (ignorePagination || size == 0) {
+            // No pagination, just sorting
+            pageable = Pageable.unpaged();  
+        } else {
+            // Regular pagination with sorting
+            pageable = PageRequest.of(page, size, sort);
+        }
 
         // Fetch active students with the role of 'STUDENT'
         Page<User> studentPage = userRepository.findByStatusAndRole(AccountStatus.ACTIVE, Role.STUDENT, pageable);
@@ -88,6 +98,7 @@ public class MoodService {
                 studentWithMoodDTO.setEmail(student.getEmail());
                 studentWithMoodDTO.setPhoneNumber(student.getPhoneNumber());
                 studentWithMoodDTO.setStudentNumber(student.getStudentNumber());
+                studentWithMoodDTO.setProfilePicture(student.getProfilePicture());
 
                 // Set mood data
                 studentWithMoodDTO.setMoodDate(mood.getDate());
@@ -98,9 +109,9 @@ public class MoodService {
             }
         }
 
+        // Return the final list, which will be sorted based on the sortBy parameter
         return studentWithMoodDTOList;
     }
-
 
 
     // Update mood by ID

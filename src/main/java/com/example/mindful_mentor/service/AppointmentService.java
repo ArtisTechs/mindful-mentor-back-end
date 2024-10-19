@@ -68,11 +68,23 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
     
-    // Method to get appointments with filters, sorting, and pagination
-    public Page<Appointment> getAppointments(UUID userId, LocalDate startDate, LocalDate endDate, AppointmentStatus status, String sortBy, boolean sortAscending, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, sortAscending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
-        return appointmentRepository.findAppointmentsByFilters(userId, startDate, endDate, status, pageable);
+    public Page<Appointment> getAppointments(UUID userId, LocalDate startDate, LocalDate endDate, AppointmentStatus status, 
+            String sortBy, boolean sortAscending, int page, Integer size, boolean ignorePagination) {
+    	Pageable pageable;
+
+    	// Handle ignoring pagination or null size
+    	if (ignorePagination || size == null) {
+    		// Create a Pageable with only sorting (no pagination) by using a large size
+    		pageable = PageRequest.of(0, Integer.MAX_VALUE, sortAscending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+    	} else {
+    		// Regular pagination logic with sorting
+    		pageable = PageRequest.of(page, size, sortAscending ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+    	}
+
+    	// Call the repository method with the filters and pageable
+    	return appointmentRepository.findAppointmentsByFilters(userId, startDate, endDate, status, pageable);
     }
+
     
  // Delete an Appointment by ID
     public void deleteAppointment(UUID id) {

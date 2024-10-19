@@ -38,12 +38,13 @@ public class MoodController {
     
     @GetMapping("/students-with-mood-today")
     public List<StudentWithMoodDTO> getStudentsWithMoodToday(
-        @RequestParam(defaultValue = "firstName") String sortBy,  // default sorting by firstName
-        @RequestParam(defaultValue = "true") boolean sortAscending, // default ascending order
-        @RequestParam(defaultValue = "0") int page, // default page number
-        @RequestParam(defaultValue = "10") int size // default page size
+            @RequestParam(defaultValue = "lastName") String sortBy,  // default sorting by firstName
+            @RequestParam(defaultValue = "true") boolean sortAscending, // default ascending order
+            @RequestParam(defaultValue = "0") int page, // default page number
+            @RequestParam(defaultValue = "10") int size, // default page size
+            @RequestParam(defaultValue = "false") boolean ignorePagination // new parameter to ignore pagination
     ) {
-        return moodService.getStudentsWithMoodToday(sortBy, sortAscending, page, size);
+        return moodService.getStudentsWithMoodToday(sortBy, sortAscending, page, size, ignorePagination);
     }
     
  // Update mood by ID

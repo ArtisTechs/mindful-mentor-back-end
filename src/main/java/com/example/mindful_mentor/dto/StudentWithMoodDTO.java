@@ -15,6 +15,7 @@ public class StudentWithMoodDTO {
     private LocalDate moodDate;
     private String moodCode;
     private String moodDescription;
+    private String profilePicture;
 
     // Getters and Setters
     public UUID getId() {
@@ -95,5 +96,13 @@ public class StudentWithMoodDTO {
 
     public void setMoodDescription(String moodDescription) {
         this.moodDescription = moodDescription;
+    }
+    
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

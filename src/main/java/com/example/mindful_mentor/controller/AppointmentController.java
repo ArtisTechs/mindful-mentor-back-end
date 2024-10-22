@@ -39,7 +39,6 @@ public class AppointmentController {
         return appointmentService.getAppointments(userId, startDate, endDate, status, sortBy, sortAscending, page, size, ignorePagination);
     }
 
-
     @PostMapping("/create")
     public Appointment createAppointment(@RequestBody AppointmentDTO appointmentDTO) throws Exception {
         return appointmentService.createAppointment(appointmentDTO);

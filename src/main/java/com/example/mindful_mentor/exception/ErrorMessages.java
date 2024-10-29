@@ -5,7 +5,8 @@ public enum ErrorMessages {
     EMAIL_ALREADY_REGISTERED("Email already exists."),
     STUDENT_NUMBER_ALREADY_REGISTERED("Student number already exists."),
     WRONG_PASSWORD("Incorrect password."),
-	USER_NOT_ACTIVE("User account is not active. Wait for the counselor for approval.");
+	USER_NOT_ACTIVE("User account is not active. Wait for the counselor for approval."),
+	DATE_ALREADY_TAKEN("A journal entry with the selected date already exists.");
 
     private final String message;
 

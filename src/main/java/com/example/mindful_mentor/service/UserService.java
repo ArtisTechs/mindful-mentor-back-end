@@ -16,10 +16,13 @@ import com.example.mindful_mentor.repository.MoodRepository;
 import com.example.mindful_mentor.repository.UserRepository;
 import com.example.mindful_mentor.security.JwtUtil; // Import for JWT token generation
 
+import jakarta.persistence.criteria.Predicate;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -166,28 +169,38 @@ public class UserService {
     public Page<User> getAllUsers(String status, String role, String searchName, int page, Integer size, String sortBy, String sortDirection, boolean ignorePagination) {
         Pageable pageable;
 
-        // Handle ignoring pagination or null size
-        if (ignorePagination || size == null) {
-            // Create a Pageable with only sorting (no pagination)
-        	 pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+        // Use the provided size or set a default if size is not specified and not ignoring pagination
+        if (ignorePagination) {
+            pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         } else {
-            // Regular pagination logic with sorting
-            pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
+            int pageSize = (size != null && size > 0) ? size : 15; // Default to 15 if size is not specified or invalid
+            pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         }
 
         Page<User> usersPage;
 
-        // Apply filters for status, role, and name
-        if (searchName != null && !searchName.isEmpty()) {
-            usersPage = userRepository.findByFirstNameContainingIgnoreCaseOrMiddleNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                searchName, searchName, searchName, pageable);
-        } else if (status != null && !status.isEmpty() && role != null && !role.isEmpty()) {
-            usersPage = userRepository.findByStatusAndRole(AccountStatus.valueOf(status.toUpperCase()), Role.valueOf(role.toUpperCase()), pageable);
-        } else if (status != null && !status.isEmpty()) {
-            usersPage = userRepository.findByStatus(AccountStatus.valueOf(status.toUpperCase()), pageable);
-        } else if (role != null && !role.isEmpty()) {
-            usersPage = userRepository.findByRole(Role.valueOf(role.toUpperCase()), pageable);
+        // Apply filters for status, role, and name with combined filtering logic
+        if ((status != null && !status.isEmpty()) || (role != null && !role.isEmpty()) || (searchName != null && !searchName.isEmpty())) {
+            usersPage = userRepository.findAll((root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (status != null && !status.isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(root.get("status"), AccountStatus.valueOf(status.toUpperCase())));
+                }
+                if (role != null && !role.isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(root.get("role"), Role.valueOf(role.toUpperCase())));
+                }
+                if (searchName != null && !searchName.isEmpty()) {
+                    Predicate firstNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")), "%" + searchName.toLowerCase() + "%");
+                    Predicate middleNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("middleName")), "%" + searchName.toLowerCase() + "%");
+                    Predicate lastNamePredicate = criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")), "%" + searchName.toLowerCase() + "%");
+                    predicates.add(criteriaBuilder.or(firstNamePredicate, middleNamePredicate, lastNamePredicate));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            }, pageable);
         } else {
+            // No filters provided, fetch all users
             usersPage = userRepository.findAll(pageable);
         }
 
@@ -199,7 +212,6 @@ public class UserService {
         // Return a new Page object with users who have password set to null
         return new PageImpl<>(usersWithoutPassword, pageable, usersPage.getTotalElements());
     }
-
 
 
     

@@ -88,7 +88,12 @@ public class UserService {
         user.setPhoneNumber(signupRequest.getPhoneNumber());
         user.setStudentNumber(signupRequest.getStudentNumber());
         user.setRole(signupRequest.getRole());
-        user.setStatus(AccountStatus.REGISTERED);
+        // Set status: use provided status or default to REGISTERED
+        AccountStatus status = signupRequest.getStatus();
+        if (status == null) {
+            status = AccountStatus.REGISTERED;  // Default status if not provided
+        }
+        user.setStatus(status);
 
         userRepository.save(user);
         logger.info("User signed up: {}", signupRequest.getEmail());

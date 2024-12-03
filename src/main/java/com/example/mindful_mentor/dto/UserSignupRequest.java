@@ -1,5 +1,6 @@
 package com.example.mindful_mentor.dto;
 
+import com.example.mindful_mentor.model.AccountStatus;
 import com.example.mindful_mentor.model.Role;
 
 import jakarta.validation.constraints.Email;
@@ -29,6 +30,9 @@ public class UserSignupRequest {
 
     @NotBlank // Ensure that the role is provided
     private Role role; // Add the role field
+    
+ // Optional field for account status, defaulting to REGISTERED
+    private AccountStatus status = AccountStatus.REGISTERED;
 
     // Getters and Setters
     public String getFirstName() {
@@ -93,5 +97,13 @@ public class UserSignupRequest {
 
     public void setRole(@NotBlank Role role) {
         this.role = role;
+    }
+    
+    public AccountStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AccountStatus status) {
+        this.status = status;
     }
 }

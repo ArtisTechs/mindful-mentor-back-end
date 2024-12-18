@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -71,7 +72,7 @@ public class MoodService {
         Pageable pageable;
         if (ignorePagination || size == 0) {
             // No pagination, just sorting
-            pageable = Pageable.unpaged();  
+            pageable = Pageable.unpaged();
         } else {
             // Regular pagination with sorting
             pageable = PageRequest.of(page, size, sort);
@@ -82,7 +83,10 @@ public class MoodService {
         List<User> students = studentPage.getContent();
 
         List<StudentWithMoodDTO> studentWithMoodDTOList = new ArrayList<>();
-        LocalDate today = LocalDate.now();
+
+        // Use Philippine time zone to get today's date
+        ZoneId philippineZone = ZoneId.of("Asia/Manila");
+        LocalDate today = LocalDate.now(philippineZone);
 
         for (User student : students) {
             // Fetch mood for today (if exists)
@@ -112,6 +116,7 @@ public class MoodService {
         // Return the final list, which will be sorted based on the sortBy parameter
         return studentWithMoodDTOList;
     }
+
 
 
     // Update mood by ID
